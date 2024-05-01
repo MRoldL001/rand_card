@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <string>
+#include <unistd.h>
 
 int main(int argc, char *argv[])
 {
@@ -22,7 +23,8 @@ int main(int argc, char *argv[])
     int num_to_select = std::atoi(argv[1]);
 
     // 输入数字小于等于0，报错退出
-    if (num_to_select <=0){
+    if (num_to_select <= 0)
+    {
         std::cerr << "Error(っ °Д °;)っ:请输入一个非零正整数: " << std::endl;
         return 1;
     }
@@ -31,8 +33,8 @@ int main(int argc, char *argv[])
     std::string warn = "";
     if (num_to_select > 100)
     {
-        std::cout << "Warnning(っ °Д °;)っ:你确定要抽取超过100张卡片吗? " << std::endl;
-        std::cout << "Warnning(っ °Д °;)っ:如果你知道你在做什么，请输入 yes : " << std::endl;
+        std::cout << "Warning(っ °Д °;)っ:你确定要抽取超过100张卡片吗? " << std::endl;
+        std::cout << "Warning(っ °Д °;)っ:如果你知道你在做什么，请输入 yes : " << std::endl;
 
         std::cin >> warn;
         if (warn != "yes")
@@ -55,12 +57,26 @@ int main(int argc, char *argv[])
 
     // 打开 ydk 文件
     std::ofstream outfile;
-    outfile.open("抽取到的卡片.ydk");
-    if (!outfile.is_open())
+    int card_num = 0;
+    std::string card_name = ("抽取到的卡片_" + std::to_string(card_num)) + ".ydk";
+    while (1)
     {
-        std::cerr << "Error(っ °Д °;)っ:无法打开 ydk 文件: " << std::endl;
+        if (access(card_name.c_str(), F_OK) == 0)
+        {
+            card_num++;
+            card_name = ("抽取到的卡片_" + std::to_string(card_num)) + ".ydk";
+        }
+        else
+        {
+            outfile.open(card_name);
+            if (!outfile.is_open())
+            {
+                std::cerr << "Error(っ °Д °;)っ:无法打开 ydk 文件: " << std::endl;
+            }
+            outfile << "#created by rand_card" << std::endl;
+            break;
+        }
     }
-    outfile << "#created by rand_card" << std::endl;
 
     // 编译并执行 SQL 查询
     rc = sqlite3_prepare_v2(db, query, -1, &stmt, NULL);
@@ -70,10 +86,9 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // 绑定参数
     sqlite3_bind_int(stmt, 1, num_to_select);
 
-    // 遍历结果集
+    // 遍历
     srand(time(NULL));
     while (sqlite3_step(stmt) == SQLITE_ROW)
     {
@@ -97,7 +112,8 @@ int main(int argc, char *argv[])
 
     // 释放资源
     std::cout << "已抽取指定数量的卡片捏 (*°▽°*)" << std::endl;
-    std::cout << ".ydk 卡组码文件已生成 (*°▽°*)" << std::endl;
+    std::cout << card_name << std::endl;
+    std::cout << (".ydk 卡组码文件已生成, 序号为 " + std::to_string(card_num)) + " (*°▽°*)" << std::endl;
     sqlite3_finalize(stmt);
     sqlite3_close(db);
     outfile.close();

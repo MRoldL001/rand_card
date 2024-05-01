@@ -22,6 +22,8 @@ cursor = rc.cursor()
 # 清空表格
 cursor.execute('''DELETE FROM images''')
 
+# FIXME 没有必要使用sqlite， 可以直接从txt中读
+
 # 打开 data_src.txt 写入文件名并逐行读取数据
 with open("data_src.txt", 'w', encoding='utf-8') as file:
     file.write("#数据库中存在的卡片编号#\n")
